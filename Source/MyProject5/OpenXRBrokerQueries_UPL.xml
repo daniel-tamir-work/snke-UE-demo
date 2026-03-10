@@ -8,11 +8,22 @@
 				<intent>
 					<action android:name="org.khronos.openxr.OpenXRRuntimeService"/>
 				</intent>
-
 				<intent>
 					<action android:name="org.khronos.openxr.OpenXRApiLayerService"/>
 				</intent>
 			</queries>
 		</addElements>
+		<addElements tag="application">
+			<provider
+				android:name="com.yourcompany.myproject5.OpenXRRuntimeProvider"
+				android:authorities="org.khronos.openxr.runtime_broker"
+				android:exported="false"/>
+		</addElements>
 	</androidManifestUpdates>
+	<prebuildCopies>
+		<copyFile src="$S(PluginDir)/../../Build/Android/src/main/jniLibs/arm64-v8a/libopenxr_monado.so"
+		          dst="$S(BuildDir)/jni/arm64-v8a/libopenxr_monado.so"/>
+		<copyFile src="$S(PluginDir)/../../Build/Android/src/main/jniLibs/arm64-v8a/libc++_shared.so"
+		          dst="$S(BuildDir)/jni/arm64-v8a/libc++_shared.so"/>
+	</prebuildCopies>
 </root>
