@@ -13,7 +13,18 @@
 				</intent>
 			</queries>
 		</addElements>
+		<addAttribute tag="activity" name="android:windowLayoutInDisplayCutoutMode" value="always"/>
 	</androidManifestUpdates>
+
+	<gameActivityOnResumeAdditions>
+		<insert>
+			// Override UE's shortEdges cutout mode with "always" (value 3) to use full display width
+			android.view.WindowManager.LayoutParams lp = getWindow().getAttributes();
+			lp.layoutInDisplayCutoutMode = 3;
+			getWindow().setAttributes(lp);
+		</insert>
+	</gameActivityOnResumeAdditions>
+
 	<prebuildCopies>
 		<copyFile src="$S(PluginDir)/../../Build/Android/src/main/jniLibs/arm64-v8a/libc++_shared.so"
 		          dst="$S(BuildDir)/jni/arm64-v8a/libc++_shared.so"/>
