@@ -1,0 +1,18 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0.0",
+	"FriendlyName": "SnkeXR Marker Tracker",
+	"Description": "Cobra SDK marker tracker integration for Unreal Engine. Streams marker pose data from the Cobra gRPC service and updates actor transforms in real-time.",
+	"Category": "Input Devices",
+	"CreatedBy": "Snke",
+	"CanContainContent": false,
+	"IsBetaVersion": true,
+	"Modules": [
+		{
+			"Name": "SnkeXRMarkerTracker",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}

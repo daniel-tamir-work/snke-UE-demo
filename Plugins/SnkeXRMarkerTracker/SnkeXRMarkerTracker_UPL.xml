@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+	<trace enable="true"/>
+
+	<!-- Bundle the pre-built Cobra SDK shared library into the APK -->
+	<prebuildCopies>
+		<copyFile src="$S(PluginDir)/Lib/Android/arm64-v8a/libmarker_tracker_client.so"
+		          dst="$S(BuildDir)/jni/arm64-v8a/libmarker_tracker_client.so"/>
+	</prebuildCopies>
+</root>

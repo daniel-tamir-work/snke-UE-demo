@@ -30,6 +30,10 @@
 				"Linux",
 				"Android"
 			]
+		},
+		{
+			"Name": "SnkeXRMarkerTracker",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [
