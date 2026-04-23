@@ -12,6 +12,11 @@ public class SnkeXRMarkerTracker : ModuleRules
 			"Core",
 			"CoreUObject",
 			"Engine",
+			// URecenterSysPropComponent -> UHeadMountedDisplayFunctionLibrary (XRBase in UE 5.4)
+			"HeadMountedDisplay",
+			"XRBase",
+			// UGraspGrabComponent -> EControllerHand
+			"InputCore",
 		});
 
 		// Cobra SDK headers (bundled in plugin)
