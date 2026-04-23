@@ -9,7 +9,8 @@ public class MyProject5 : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+		// UE 5.4+: UHeadMountedDisplayFunctionLibrary lives in the XRBase plugin module, not Runtime/HeadMountedDisplay alone.
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "XRBase" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

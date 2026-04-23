@@ -39,9 +39,9 @@ Output: `Lib/Android/arm64-v8a/libmarker_tracker_client.so`
 
 ## Setup
 
-1. **Build the .so** on Linux using `build.sh` (see above).
+1. **Build the .so** on Linux using `build.sh` (see above), or use the pre-built one in `Lib/Android/arm64-v8a/`.
 
-2. **Copy or symlink** this plugin folder into your UE project's `Plugins/` directory.
+2. **Copy** this plugin folder into your UE project's `Plugins/` directory.
 
 3. **Enable** the plugin in your `.uproject`:
    ```json
@@ -52,6 +52,18 @@ Output: `Lib/Android/arm64-v8a/libmarker_tracker_client.so`
    ```
 
 4. **Rebuild** the project.
+
+5. **Bundle `libc++_shared.so`** — the pre-built `.so` uses the C++ standard library, which Android requires to be bundled in the APK. If your project doesn't already include it (e.g. via OpenXR/Monado), add a UPL XML to your project with:
+   ```xml
+   <?xml version="1.0" encoding="utf-8"?>
+   <root xmlns:android="http://schemas.android.com/apk/res/android">
+       <prebuildCopies>
+           <copyFile src="$S(PluginDir)/../../Build/Android/src/main/jniLibs/arm64-v8a/libc++_shared.so"
+                     dst="$S(BuildDir)/jni/arm64-v8a/libc++_shared.so"/>
+       </prebuildCopies>
+   </root>
+   ```
+   The `libc++_shared.so` file can be found in your Android NDK at `toolchains/llvm/prebuilt/*/sysroot/usr/lib/aarch64-linux-android/`.
 
 ## Usage
 
