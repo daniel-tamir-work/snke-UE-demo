@@ -5,6 +5,10 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
 
+#if PLATFORM_ANDROID
+#include <sys/system_properties.h>
+#endif
+
 DEFINE_LOG_CATEGORY_STATIC(LogCameraEdgeFade, Log, All);
 
 namespace
@@ -18,7 +22,8 @@ namespace
 
 UCameraEdgeFadeComponent::UCameraEdgeFadeComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.TickInterval = 0.0f;
 
 	// Engine's default plane mesh (1m x 1m, +X normal). We rotate it to face -Y
 	// so the visible face points toward +X from the camera when we offset it.
@@ -51,7 +56,7 @@ void UCameraEdgeFadeComponent::OnRegister()
 {
 	Super::OnRegister();
 	ApplyPlacement();
-	SetVisibility(bEnabled);
+	RefreshEffectiveVisibility();
 
 	// In editor we also want live preview without PIE.
 	EnsureDynamicMaterial();
@@ -63,7 +68,48 @@ void UCameraEdgeFadeComponent::BeginPlay()
 	Super::BeginPlay();
 	EnsureDynamicMaterial();
 	PushAllParameters();
-	SetVisibility(bEnabled);
+
+	// Prime the sysprop state immediately so we don't wait a full poll interval
+	// for the first read.
+	const FString Initial = ReadSysProp(FadeDisableSysProp);
+	bSysPropDisabled = (Initial == TEXT("1"));
+	RefreshEffectiveVisibility();
+
+	UE_LOG(LogCameraEdgeFade, Log,
+		TEXT("CameraEdgeFade: polling '%s' every %.2fs (initial='%s', effective=%s)"),
+		*FadeDisableSysProp, SysPropPollInterval, *Initial,
+		(bEnabled && !bSysPropDisabled) ? TEXT("visible") : TEXT("hidden"));
+}
+
+void UCameraEdgeFadeComponent::TickComponent(float DeltaTime, ELevelTick TickType,
+	FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (FadeDisableSysProp.IsEmpty())
+	{
+		return;
+	}
+
+	TimeSinceLastPoll += DeltaTime;
+	if (TimeSinceLastPoll < SysPropPollInterval)
+	{
+		return;
+	}
+	TimeSinceLastPoll = 0.0f;
+
+	const FString Current = ReadSysProp(FadeDisableSysProp);
+	const bool bShouldDisable = (Current == TEXT("1"));
+
+	if (bShouldDisable != bSysPropDisabled)
+	{
+		bSysPropDisabled = bShouldDisable;
+		UE_LOG(LogCameraEdgeFade, Log,
+			TEXT("CameraEdgeFade: sysprop '%s' -> '%s', fade now %s"),
+			*FadeDisableSysProp, *Current,
+			(bEnabled && !bSysPropDisabled) ? TEXT("VISIBLE") : TEXT("HIDDEN"));
+		RefreshEffectiveVisibility();
+	}
 }
 
 #if WITH_EDITOR
@@ -88,7 +134,7 @@ void UCameraEdgeFadeComponent::PostEditChangeProperty(FPropertyChangedEvent& Eve
 
 	if (Name == GET_MEMBER_NAME_CHECKED(UCameraEdgeFadeComponent, bEnabled))
 	{
-		SetVisibility(bEnabled);
+		RefreshEffectiveVisibility();
 	}
 
 	PushAllParameters();
@@ -128,7 +174,28 @@ void UCameraEdgeFadeComponent::SetFadeColor(FLinearColor NewFadeColor)
 void UCameraEdgeFadeComponent::SetVignetteEnabled(bool bNewEnabled)
 {
 	bEnabled = bNewEnabled;
-	SetVisibility(bEnabled);
+	RefreshEffectiveVisibility();
+}
+
+void UCameraEdgeFadeComponent::RefreshEffectiveVisibility()
+{
+	SetVisibility(bEnabled && !bSysPropDisabled);
+}
+
+FString UCameraEdgeFadeComponent::ReadSysProp(const FString& Name)
+{
+#if PLATFORM_ANDROID
+	char Buffer[PROP_VALUE_MAX] = { 0 };
+	const FTCHARToUTF8 NameUtf8(*Name);
+	const int Len = __system_property_get(NameUtf8.Get(), Buffer);
+	if (Len <= 0)
+	{
+		return FString();
+	}
+	return FString(UTF8_TO_TCHAR(Buffer));
+#else
+	return FString();
+#endif
 }
 
 void UCameraEdgeFadeComponent::RefreshParameters()

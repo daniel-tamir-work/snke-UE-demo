@@ -191,6 +191,10 @@ void UGraspGrabComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	const float GraspStrength = ComputeGraspStrength(Data);
 	const bool bHasSkeleton = GraspStrength >= 0.0f;
 
+	// Publish to BlueprintReadOnly UPROPERTY so sibling components (e.g. the
+	// hand visual shader) can read it without recomputing.
+	CurrentGraspStrength = bHasSkeleton ? GraspStrength : 0.0f;
+
 	// Decide new grasp state with hysteresis.
 	bool bIsGrasped = bWasGrasped;
 	if (Data.bValid && bHasSkeleton)

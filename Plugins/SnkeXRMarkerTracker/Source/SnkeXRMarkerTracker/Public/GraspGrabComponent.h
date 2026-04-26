@@ -94,6 +94,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Grab")
 	void ReleaseHeldActor();
 
+	/**
+	 * Latest grasp strength in [0,1] as computed from finger curl this tick
+	 * (0 = hand open, 1 = fist). -1 when skeletal data isn't available yet.
+	 * Updated every tick; safe for other components to read.
+	 */
+	UPROPERTY(BlueprintReadOnly, Category = "Grab")
+	float CurrentGraspStrength = 0.0f;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;

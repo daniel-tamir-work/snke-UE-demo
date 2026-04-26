@@ -74,6 +74,23 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vignette")
 	bool bEnabled = true;
 
+	/**
+	 * If set, poll this Android system property every PollIntervalSeconds.
+	 * When the value is "1" the fade is hidden; any other value (including
+	 * unset) means the fade is visible according to bEnabled.
+	 *
+	 * Test from adb:
+	 *   adb shell setprop debug.myapp.fade_disable 1    # hide fade
+	 *   adb shell setprop debug.myapp.fade_disable 0    # show fade again
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vignette|SysProp")
+	FString FadeDisableSysProp = TEXT("debug.myapp.fade_disable");
+
+	/** How often to poll the system property, in seconds. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vignette|SysProp",
+	          meta = (ClampMin = "0.05"))
+	float SysPropPollInterval = 1.0f;
+
 	/** Set fade opacity (writes to FadeColor.A). Useful for animating fades. */
 	UFUNCTION(BlueprintCallable, Category = "Vignette")
 	void SetFadeOpacity(float Alpha01);
@@ -105,6 +122,8 @@ public:
 protected:
 	virtual void OnRegister() override;
 	virtual void BeginPlay() override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
+		FActorComponentTickFunction* ThisTickFunction) override;
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
@@ -113,7 +132,16 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UMaterialInstanceDynamic> DynamicMID = nullptr;
 
+	float TimeSinceLastPoll = 0.0f;
+	bool bSysPropDisabled = false;
+
 	void ApplyPlacement();
 	void EnsureDynamicMaterial();
 	void PushAllParameters();
+
+	/** Effective visibility = bEnabled && !bSysPropDisabled. Pushes to SetVisibility. */
+	void RefreshEffectiveVisibility();
+
+	/** Returns the current sysprop value ("" if unset or not Android). */
+	static FString ReadSysProp(const FString& Name);
 };
