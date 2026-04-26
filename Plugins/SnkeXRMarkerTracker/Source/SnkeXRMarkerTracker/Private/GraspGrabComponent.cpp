@@ -255,6 +255,26 @@ void UGraspGrabComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 						HandToStr(Hand), Data.bValid ? 1 : 0, GraspStrength,
 						bIsGrasped ? TEXT("HELD") : TEXT("open")));
 			}
+
+			// Held-object pose heartbeat (fires on the same 1Hz cadence as above).
+			if (AActor* Held = HeldActor.Get())
+			{
+				const FVector    Loc = Held->GetActorLocation();
+				const FRotator   Rot = Held->GetActorRotation();
+				UE_LOG(LogGraspGrab, Log,
+					TEXT("Grape [%s] held='%s' loc=(%.1f, %.1f, %.1f) rot=(P=%.1f Y=%.1f R=%.1f)"),
+					HandToStr(Hand), *Held->GetName(),
+					Loc.X, Loc.Y, Loc.Z,
+					Rot.Pitch, Rot.Yaw, Rot.Roll);
+
+				if (GEngine)
+				{
+					const int32 HeldKey = (Hand == EControllerHand::Left) ? 12005 : 12006;
+					GEngine->AddOnScreenDebugMessage(HeldKey, DebugLogInterval + 0.25f, FColor::Cyan,
+						FString::Printf(TEXT("[%s] %s @ (%.0f, %.0f, %.0f)"),
+							HandToStr(Hand), *Held->GetName(), Loc.X, Loc.Y, Loc.Z));
+				}
+			}
 		}
 	}
 
@@ -415,6 +435,26 @@ AActor* UGraspGrabComponent::FindNearestGrabbable(const FVector& Origin) const
 		FCollisionObjectQueryParams(FCollisionObjectQueryParams::AllDynamicObjects),
 		FCollisionShape::MakeSphere(GrabRadius),
 		Params);
+
+	// Diagnostic: log every overlap hit and whether it passed the tag filter.
+	// Fires once per grab attempt; cheap enough to always leave on for now.
+	UE_LOG(LogGraspGrab, Log,
+		TEXT("Grape [%s] overlap@(%.1f,%.1f,%.1f) r=%.1f -> %d hit(s)"),
+		HandToStr(Hand), Origin.X, Origin.Y, Origin.Z, GrabRadius, Overlaps.Num());
+
+	for (const FOverlapResult& Hit : Overlaps)
+	{
+		AActor* A = Hit.GetActor();
+		if (!A) continue;
+		UE_LOG(LogGraspGrab, Log,
+			TEXT("  - '%s' class=%s hasTag(%s)=%s mob=%d dist=%.1f"),
+			*A->GetName(),
+			*A->GetClass()->GetName(),
+			*GrabTag.ToString(),
+			A->ActorHasTag(GrabTag) ? TEXT("YES") : TEXT("no"),
+			A->GetRootComponent() ? (int32)A->GetRootComponent()->Mobility.GetValue() : -1,
+			FVector::Dist(Origin, A->GetActorLocation()));
+	}
 
 	if (!bHit)
 	{
